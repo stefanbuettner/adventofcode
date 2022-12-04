@@ -1,34 +1,48 @@
-rock = ["A", "X"]
-paper = ["B", "Y"]
-scissors = ["C", "Z"]
+rock = "A"
+paper = "B"
+scissors = "C"
 
-# loss = "X"
-# draw = "Y"
-# win = "Z"
+loss = "X"
+draw = "Y"
+win = "Z"
 
 def round_score(opponent_move, own_move):
-    if opponent_move in rock and own_move in rock:
+    if opponent_move == rock and own_move == rock:
         return 3
-    elif opponent_move in rock and own_move in paper:
+    elif opponent_move == rock and own_move == paper:
         return 6
-    elif opponent_move in rock and own_move in scissors:
+    elif opponent_move == rock and own_move == scissors:
         return 0
-    elif opponent_move in paper and own_move in rock:
+    elif opponent_move == paper and own_move == rock:
         return 0
-    elif opponent_move in paper and own_move in paper:
+    elif opponent_move == paper and own_move == paper:
         return 3
-    elif opponent_move in paper and own_move in scissors:
+    elif opponent_move == paper and own_move == scissors:
         return 6
-    elif opponent_move in scissors and own_move in rock:
+    elif opponent_move == scissors and own_move == rock:
         return 6
-    elif opponent_move in scissors and own_move in paper:
+    elif opponent_move == scissors and own_move == paper:
         return 0
-    elif opponent_move in scissors and own_move in scissors:
+    elif opponent_move == scissors and own_move == scissors:
         return 3
 
-# def required_move(opponent_move, result):
-#     if opponent_move == rock and result = loss
-#         return 
+def required_move(opponent_move, result):
+    if result == draw:
+        return opponent_move
+    if result == loss:
+        if opponent_move == rock:
+            return scissors
+        elif opponent_move == paper:
+            return rock
+        elif opponent_move == scissors:
+            return paper
+    if result == win:
+        if opponent_move == rock:
+            return paper
+        elif opponent_move == paper:
+            return scissors
+        elif opponent_move == scissors:
+            return rock
 
 def move_score(move):
     if move in rock:
@@ -40,6 +54,7 @@ def move_score(move):
 
 with open("input.txt") as f:
     moves = map(str.split, f)
-    opponent_moves, own_moves = map(list, zip(*moves))
+    opponent_moves, desired_result = map(list, zip(*moves))
+    own_moves = map(required_move, opponent_moves, desired_result)
     total_score = sum(map(round_score, opponent_moves, own_moves) + map(move_score, own_moves))
     print("Total score: {}".format(total_score))
