@@ -28,6 +28,10 @@ def generate_possible_number_locations(symbol_locations):
     return possible_locations
 
 def find_adjacent_numbers_ids(content, possible_number_locations):
+    """
+    Returns a set of adjacent numbers ids for the given possible number locations.
+    [{0, 78, 3}, {2}, ...]
+    """
     numbers = set()
     for possible_location in possible_number_locations:
         if content[possible_location[1]][possible_location[0]] >= 0:
@@ -36,7 +40,7 @@ def find_adjacent_numbers_ids(content, possible_number_locations):
 
 def generate_number_map(content : list):
     """
-    Returns content with numbers replaced 
+    Returns {0 : 468, 1: 984}, [[...000...*...], [111...22222], ...]
     """
     content_with_number_indices = []
     number_map = {}
@@ -65,7 +69,10 @@ def parse_number(text, x):
         end_idx += 1
     return int(text[start_idx:end_idx]), start_idx, end_idx
 
-def find_gear_ratios(content_with_ids, gearbox_locations):
+def find_gear_ratios_ids(content_with_ids, gearbox_locations):
+    """
+    Returns [(id, id), ...]
+    """
     gear_ratios = []
     for gearbox in gearbox_locations:
         adjacent_numbers = set()
@@ -95,7 +102,7 @@ with open("input.txt") as f:
     print("Part 1:", foo)
 
     gearbox_locations = find_symbol_locations(content, "\*")
-    gear_ratios = find_gear_ratios(content_with_ids, gearbox_locations)
+    gear_ratios = find_gear_ratios_ids(content_with_ids, gearbox_locations)
     gear_ratios = map(lambda t: map(lambda idx: number_map[idx], t), gear_ratios)
     
     print("Part 2:", sum(itertools.starmap(op.mul, gear_ratios)))
