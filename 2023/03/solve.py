@@ -96,10 +96,7 @@ with open("input.txt") as f:
     locations = find_symbol_locations(content, all_symbols_regex)
     possible_number_locations = generate_possible_number_locations(locations)
     number_ids = find_adjacent_numbers_ids(content_with_ids, possible_number_locations)
-    foo = 0
-    for number_id in number_ids:
-        foo += number_map[number_id]
-    print("Part 1:", foo)
+    print("Part 1:", sum(map(lambda id: number_map[id], number_ids)))
 
     gearbox_locations = find_symbol_locations(content, "\*")
     gear_ratios = find_gear_ratios_ids(content_with_ids, gearbox_locations)
