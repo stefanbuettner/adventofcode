@@ -1,3 +1,7 @@
+import itertools as it
+import operator as op
+import bisect
+
 class range_map:
     def __init__(self, dest, source, length):
         self.start = source
@@ -44,6 +48,31 @@ class category_map:
             if mapped_value != value:
                 return mapped_value
         return value
+
+def start_length_to_start_last(seeds):
+    for i in range(0, len(seeds)):
+        if i % 2 == 1:
+            seeds[i] += seeds[i-1] - 1
+    return seeds
+
+def split_ranges(seeds, range_list):
+    new = []
+    for r in range_list:
+        # Inserting left of a last element is an odd index
+        # if the insertion point is within an interval.
+        i = bisect.bisect_left(seeds, r.start)
+        if i % 2 == 1:
+            new.append(r.start - 1)
+            new.append(r.start)
+        i = bisect.bisect_left(seeds, r.end)
+        if i % 2 == 1:
+            new.append(r.end - 1)
+            new.append(r.end)
+    seeds.extend(new)
+    seeds = list(set(seeds))
+    seeds.sort()
+    return seeds
+        
         
 with open("input.txt") as f:
     seeds = []
@@ -71,3 +100,19 @@ with open("input.txt") as f:
         results = list(map(category, results))
     
     print("Part 1: ", min(results))
+
+    seed_ranges = start_length_to_start_last(seeds)
+    #print(seed_ranges)
+    # If the intervals are not overlapping, then sorting keeps start, end
+    # pairs adjacent.
+    seed_ranges.sort()
+    #print(seed_ranges)
+    for category in category_maps:
+        seed_ranges = split_ranges(seed_ranges, category.range_maps)
+        #print("Split: ", seed_ranges)
+        seed_ranges = list(map(category, seed_ranges))
+        #print("Map  : ", seed_ranges)
+        seed_ranges.sort()
+        #print("Sort : ", seed_ranges)
+    
+    print("Part 2: ", min(seed_ranges))
