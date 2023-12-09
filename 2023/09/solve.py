@@ -3,7 +3,10 @@ import operator as op
 
 def generate_triangle(line : str):
     """
-    Generates the triangle of differences
+    Generates the triangle of differences, e.g.
+    0   3   6   9  12  15
+      3   3   3   3   3
+        0   0   0   0
     """
     history = list(map(int, line.strip().split(" ")))
     triangle = [history]
