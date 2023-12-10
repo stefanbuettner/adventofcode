@@ -1,5 +1,4 @@
 import itertools as it
-import collections
 
 simple_loop = """-L|F7
 7S-7|
@@ -108,11 +107,17 @@ opposite_direction = {
     WEST: EAST,
 }
 
-def compute_loop_nodes(pipe_map, start_x, start_y):
+def compute_loop_nodes(pipe_map, start_coordinates):
+    """
+    Returns the loop nodes as a list. When traversing the list front to back
+    the loop is traveresed counter-clockwise.
+
+    [(x, y), ...]
+    """
     loop_nodes = []
-    queue = [(start_x, start_y, None)] # (x, y, incoming_direction)
+    queue = [(start_coordinates, None)] # ((x, y), incoming_direction)
     while len(queue) > 0:
-        curr_x, curr_y, incoming_direction = queue.pop()
+        (curr_x, curr_y), incoming_direction = queue.pop()
         current_element = get_element(pipe_map, curr_x, curr_y)
         if current_element["visited"]:
             # Found loop
@@ -134,24 +139,30 @@ def compute_loop_nodes(pipe_map, start_x, start_y):
             # Only go if the next node has an edge to this node
             if opposite_direction[direction] in next_element["edges"]:
                 took_step = True
-                queue.append((x, y, direction))
+                queue.append(((x, y), direction))
         if not took_step:
             loop_nodes.pop()
+    assert False
 
 
 def compute_pipe_map(content):
+    """
+    Generates the pipe_map based on the file content.
+
+    Returns the pipe_map and the start coordinates
+    """
     width = len(content[0])
     height = len(content)
     pipe_map = [[{"edges" : list(), "distance": None, "visited": False, "type": "."} for _ in range(width)] for _ in range(height)]
-    start_node = None
+    start_coordinates = None
     for y in range(height):
         for x in range(width):
             edge_type = content[y][x]
             pipe_map[y][x]["type"] = edge_type
             pipe_map[y][x]["edges"] = directions[edge_type]
             if edge_type == "S":
-                start_node = (x, y)
-    return pipe_map, start_node[0], start_node[1]
+                start_coordinates = (x, y)
+    return pipe_map, start_coordinates
 
 def node_difference(a, b):
     return (a[0] - b[0], a[1] - b[1])
@@ -184,28 +195,8 @@ type_direction_to_inner_offset = {
     },
 }
 
-# class UnionFind:
-#     parent_node = {}
-
-#     def make_set(self, u):
-#         for k in u:
-#             self.parent_node[k] = k
-    
-#     def find(self, k):
-#         if self.parent_node[k] != k:
-#             self.parent_node[k] = self.find(k)
-#         return self.parent_node[k]
-    
-#     def unite(self, k, j):
-#         # Find the representative elements
-#         a = self.find(k)
-#         b = self.find(j)
-
-def reset_pipe_map_visited(pipe_map, value = False):
-    for line in pipe_map:
-        for n in line:
-            n["visited"] = value
-
+# Used for determining the type of S based on the
+# first and last loop node.
 directions_to_type = {
     (NORTH, NORTH): "|",
     (NORTH, EAST): "F",
@@ -221,9 +212,8 @@ directions_to_type = {
     (WEST, WEST): "-",
 }
 
-nodes_with_vertical_component = "|F7JL"
 corner_nodes = "F7JL"
-corner_changing_side = {
+corner_is_changing_side = {
     "F": {
         "J": True,
         "7": False,
@@ -236,8 +226,10 @@ corner_changing_side = {
 
 def find_inner_nodes(pipe_map, loop):
     """
-    Loop is winding counter-lockwise.
+    Loop is assumed to wind counter-lockwise.
     See comment of the directions-map.
+
+    Returns a list of inner nodes: [(x, y), ...]
     """
     directions = list(map(step_to_direction, map(node_difference , loop[1:], loop[:-1])))
     directions.append(step_to_direction(node_difference(loop[0], loop[-1])))
@@ -248,32 +240,40 @@ def find_inner_nodes(pipe_map, loop):
 
     y = 0
     for row in pipe_map:
-        walls_passed = 0
-        in_wall = False
         x = 0
-        last_corner = None
-        last_corners = []
+        inside = False
+        first_corner = None
         for node in row:
+            # If we hit the loop
             if (x, y) in loop_directions:
                 t = node["type"]
                 if t == "S":
                     t = directions_to_type[(directions[-1], directions[0])]
+                # If we hit a corner of the loop
+                # this means that we're dealing with a horizontal segment.
+                # They can either change the side or not:
+                #
+                # II|OOO  IIIIII
+                # IIL-7O  IIF7II
+                # IIII|O  II||II
+                #
+                # Also corners always come in pairs.
+                # Therfore we need to save the first corner and act with
+                # that when encountering the second corner.
                 if t in corner_nodes:
-                    if last_corner is None:
-                        last_corner = t
+                    if first_corner is None:
+                        first_corner = t
                     else:
-                        if corner_changing_side[last_corner][t]:
-                            walls_passed += 1
-                        last_corner = None
+                        if corner_is_changing_side[first_corner][t]:
+                            inside = not inside
+                        first_corner = None
+                # Vertical walls always change the side
                 elif t == "|":
-                    walls_passed += 1
-            elif walls_passed > 0 and walls_passed % 2 == 1:
-                #print(walls_passed)
+                    inside = not inside
+            # If it's not a node on the loop it's either inside or outside.
+            elif inside:
                 inner_nodes.append((x, y))
-            last_corners.append(last_corner)
             x += 1
-        #print(last_corners)
-        #print(y, inner_nodes)
         y += 1
     return inner_nodes
 
@@ -283,15 +283,8 @@ def find_inner_nodes(pipe_map, loop):
 #content = example_enclosing_2.split('\n') # 10
 #content = example_enclosing_3.split('\n') # 4
 content = open("input.txt").read().split('\n')
-width = len(content[0])
-height = len(content)
-
-# print(width, height)
-# print(content)
-
-pipe_map, x, y = compute_pipe_map(content)
+pipe_map, start_coordinates = compute_pipe_map(content)
 # print_pipe_map(pipe_map)
-loop_nodes = compute_loop_nodes(pipe_map, x, y)
-#print(loop_nodes)
+loop_nodes = compute_loop_nodes(pipe_map, start_coordinates)
 print("Part 1: ", int((len(loop_nodes)) / 2))
 print("Part 2: ", len(find_inner_nodes(pipe_map, loop_nodes)))
