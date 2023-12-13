@@ -155,6 +155,9 @@ def generate_possibilities_2(record, parity_list):
 content = open("input.txt").read().split('\n')
 
 records, parity_lists = zip(*map(parse_row, content))
+multiplier = 5
+records = list(map(lambda l: l * multiplier, records))
+parity_lists = list(map(lambda l: l * multiplier, parity_lists))
 records_and_parity = zip(records, parity_lists)
 
 # print(list(map(generate_possibilities, records)))
@@ -162,7 +165,8 @@ mus = 0
 for i in range(len(records)):
     #mus += sum(1 for _ in filter(lambda p: p == parity_lists[i], map(record_to_parity_list, generate_possibilities(records[i]))))
     unknown_possibilities, valid_records, _, _ = analyze_record(records[i], parity_lists[i])
-    #print(records[i], unknown_possibilities, valid_records)
+    print(records[i], unknown_possibilities, valid_records)
+    #print("Speedup: {:7.2f}, 2 slower: {:7.2f}".format(max(unknown_possibilities, valid_records) / min(unknown_possibilities, valid_records), valid_records / unknown_possibilities))
     mus += sum(1 for _ in generate_possibilities_2(records[i], parity_lists[i]))
     #print()
     # for possibility in generate_possibilities(record):
